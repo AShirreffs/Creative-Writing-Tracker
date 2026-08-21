@@ -1,11 +1,20 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import Navbar from "./components/Navbar";
+import CharacterSection from "./components/CharacterSection";
 
 function App() {
   const [showForm, setShowForm] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [activeSection, setActiveSection] = useState("overview");
+  const [editingProjectId, setEditingProjectId] = useState(null);
+  const [editingProjectName, setEditingProjectName] = useState("");
+  const [editGenre, setEditGenre] = useState("");
+  const [editWeeklyGoal, setEditWeeklyGoal] = useState("");
+
+  const [projectName, setProjectName] = useState("");
+  const [genre, setGenre] = useState("");
+  const [weeklyGoal, setWeeklyGoal] = useState("");
 
   const [projects, setProjects] = useState(() => {
     const savedProjects = localStorage.getItem("projects");
@@ -16,9 +25,7 @@ function App() {
     return [];
   });
 
-  const [projectName, setProjectName] = useState("");
-  const [genre, setGenre] = useState("");
-  const [weeklyGoal, setWeeklyGoal] = useState("");
+  
 
   useEffect(() => {
     localStorage.setItem("projects", JSON.stringify(projects));
@@ -47,6 +54,29 @@ function App() {
 
     const updatedProjects = projects.filter((project) => project.id !== id);
     setProjects(updatedProjects);
+  }
+
+  function startEditingProject(project) {
+    setEditingProjectId(project.id);
+    setEditingProjectName(project.name);
+    setEditGenre(project.genre);
+    setEditWeeklyGoal(project.weeklyGoal);
+  }
+
+  function saveProjectEdits() {
+    const updatedProjects = projects.map((project) => {
+      if (project.id === editingProjectId) {
+        return {
+          ...project,
+          name: editingProjectName,
+          genre: editGenre,
+          weeklyGoal: editWeeklyGoal,
+        };
+      }
+      return project;
+    });
+    setProjects(updatedProjects);
+    setEditingProjectId(null);
   }
 
   if (selectedProject) {
@@ -87,10 +117,12 @@ function App() {
               </>
             )}
             {activeSection === "characters" && (
-              <>
-                <h2>Characters</h2>
-                <p>Your character details will go here.</p>
-              </>
+              <CharacterSection 
+                selectedProject={selectedProject}
+                projects={projects}
+                setProjects={setProjects}
+                setSelectedProject={setSelectedProject}
+              />
             )}
             {activeSection === "chapters" && (
               <>
@@ -152,18 +184,66 @@ function App() {
                 <p>{project.genre}</p>
                 <p>Weekly Goal: {project.weeklyGoal}</p>
                 <button
-                  className = "open-project-button"
+                  className = "project-action-button"
                   onClick={() => setSelectedProject(project)}
-                  >
-                    Open Project
-                  </button>
-
+                >
+                  Open Project
+                </button>
                 <button
-                  className = "delete-button"
+                  className = "project-action-button"
+                  onClick={() => startEditingProject(project)}
+                >
+                  Edit 
+                </button>
+                <button
+                  className = "project-action-button delete-button"
                   onClick={() => deleteProject(project.id)}
                 >
                   Delete
                 </button>
+                {editingProjectId === project.id && (
+                  <div className="edit-project-form">
+                    <label>Project Name</label>
+                    <input
+                      type="text"
+                      value={editingProjectName}
+                      onChange={(event) =>
+                        setEditingProjectName(event.target.value)
+                      }
+                    />
+
+                    <label>Genre</label>
+                    <input
+                      type="text"
+                      value={editGenre}
+                      onChange={(event) =>
+                        setEditGenre(event.target.value)
+                      }
+                    />
+
+                    <label>Weekly Goal</label>
+                    <input
+                      type="number"
+                      value={editWeeklyGoal}
+                      onChange={(event) =>
+                        setEditWeeklyGoal(event.target.value)
+                      }
+                    />
+
+                    <div className="form-buttons">
+                      <button onClick={saveProjectEdits}>
+                        Save Changes
+                      </button>
+
+                      <button
+                        className="cancel-button"
+                        onClick={() => setEditingProjectId(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    </div>
+                  )}
               </div>
             ))}
             <button
@@ -175,7 +255,6 @@ function App() {
           </div>
         )}
 
-        
         
         {showForm && (
           <div className="project-form">
